@@ -1,0 +1,190 @@
+<?xml version="1.0" ?>
+<robot name="flagpole">
+
+  <!-- ========================
+       CART BASE
+       (A rectangular box)
+  ======================== -->
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="10.0"/>
+      <inertia ixx="1.0" iyy="1.0" izz="1.0" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.4 0.2 0.05"/>
+      </geometry>
+      <material name="Blue"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.4 0.2 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ========================
+       POLE LINK
+       (A tall cylinder + sphere "bob" on top,
+        with slight overlap so no gap is visible)
+  ======================== -->
+  <link name="pole_1">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.05" iyy="0.05" izz="0.05" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0.25" rpy="0 0 0"/>
+      <geometry>
+        <cylinder length="0.5" radius="0.03"/>
+      </geometry>
+      <material name="Green"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.25" rpy="0 0 0"/>
+      <geometry>
+        <cylinder length="0.5" radius="0.03"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0.505" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.06"/>
+      </geometry>
+      <material name="Silver"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.505" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.06"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ========================
+       WHEELS (4)
+       Oriented so they spin around y-axis.
+  ======================== -->
+  <link name="tl_wheel_1">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder length="0.02" radius="0.07"/>
+      </geometry>
+      <material name="Gray"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder length="0.02" radius="0.07"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="bl_wheel_1">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder length="0.02" radius="0.07"/>
+      </geometry>
+      <material name="Gray"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder length="0.02" radius="0.07"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="tr_wheel_1">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder length="0.02" radius="0.07"/>
+      </geometry>
+      <material name="Gray"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder length="0.02" radius="0.07"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="br_wheel_1">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder length="0.02" radius="0.07"/>
+      </geometry>
+      <material name="Gray"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder length="0.02" radius="0.07"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ========================
+       JOINTS
+       (Pole rotates about y-axis ±50°, wheels rotate continuously about y-axis)
+  ======================== -->
+  <joint name="pole_base_joint" type="revolute">
+    <origin xyz="0 0 0.05" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="pole_1"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.87266" upper="0.87266" effort="30.0" velocity="2.0"/>
+    <dynamics damping="5.0" friction="5.0"/>
+  </joint>
+  <joint name="tl_base_joint" type="continuous">
+    <origin xyz="0.18 0.10 0" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="tl_wheel_1"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="bl_base_joint" type="continuous">
+    <origin xyz="-0.18 0.10 0" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="bl_wheel_1"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="tr_base_joint" type="continuous">
+    <origin xyz="0.18 -0.10 0" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="tr_wheel_1"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="br_base_joint" type="continuous">
+    <origin xyz="-0.18 -0.10 0" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="br_wheel_1"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+</robot>
