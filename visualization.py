@@ -55,7 +55,7 @@ class ContinuousSimulation:
                           fontsize=10, color='black',
                           bbox=dict(facecolor='white', alpha=0.7))
 
-        self.info_text = self.ax_pend.text(-2.9, 1.2, "", fontsize=10)
+        self.info_text = self.ax_pend.text(-2.9, 0.8, "", fontsize=10)
 
         # System response plot
         self.ax_plot = self.fig.add_subplot(gs[1, 0])
