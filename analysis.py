@@ -57,6 +57,6 @@ def create_scenario_plot(results, noise_on=False, filter_on=False):
     plt.tight_layout()
     
     scenario_name = f"scenario_noise{'on' if noise_on else 'off'}_filter{'on' if filter_on else 'off'}.png"
-    plt.savefig(scenario_name, dpi=300)
+    plt.savefig(scenario_name)
     
-    return plt.gcf()
+    return plt.gcf() 

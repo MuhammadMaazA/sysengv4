@@ -20,8 +20,7 @@ class PIDController:
         
         self.integrator_error += error*dt
         
-        # Position bias in integral term - key to natural centering
-        position_bias = 0.02 * x  # Mild position feedback
+        position_bias = 0.02 * x 
         if abs(error) < 0.05:  # Only apply when angle is nearly stable
             self.integrator_error -= position_bias * dt
             
@@ -34,7 +33,6 @@ class PIDController:
         i_term = self.pid_gains['Ki'] * self.integrator_error
         d_term = self.pid_gains['Kd'] * d_error
 
-        # Apply deadzone to total control output too
         control = -(p_term + i_term + d_term)
         if abs(theta) < 0.0005 and abs(theta_dot) < 0.001:
             control *= 0.5  # Reduce control when very close to equilibrium
@@ -52,8 +50,7 @@ class PoleController:
     def compute_control(self, theta, theta_dot):
         k1, k2 = self.K_pole
         ctrl = k1*theta + k2*theta_dot
-        
-        # Amplify small control signals for better visualization
+    
         if abs(ctrl) < 0.1 and abs(theta) > 0.01:
             ctrl *= 2.0
             
@@ -74,7 +71,6 @@ class NonlinearController:
         
         ctrl = k2*(E_desired - E_current)*np.sign(theta_dot*np.cos(theta))
         
-        # Amplify small control signals for better visualization
         if abs(ctrl) < 0.1 and abs(theta) > 0.01:
             ctrl *= 1.5
             

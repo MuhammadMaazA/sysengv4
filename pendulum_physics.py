@@ -5,40 +5,30 @@ from controllers import PIDController, PoleController, NonlinearController
 
 class InvertedPendulum:
     def __init__(self):
-        # System parameters
-        self.m = 0.1       # Pendulum bob mass (kg)
-        self.M = 0.5       # Cart mass (kg) 
-        self.L = 0.5       # Pendulum length (m)
-        self.g = 9.81      # Gravity (m/s^2)
+        #system parameters
+        self.m = 0.1       #pendulum bob mass
+        self.M = 0.5       #cart mass 
+        self.L = 0.5       #pendulum length
+        self.g = 9.81      #gravity
 
-        # Friction parameters
-        self.b = 0.5       # Baseline cart damping
-        self.bd = 0.1      # Pivot damping
-        self.cart_friction = 4  # Cart friction
+        # friction parameters
+        self.b = 0.5       #baseline cart damping
+        self.bd = 0.1      #  pivot damping
+        self.cart_friction = 4  # cart friction
+        self.state = np.array([0.0, 0.0, 0.04, 0.0])
 
-        # State: [x, x_dot, theta, theta_dot]
-        self.state = np.array([0.0, 0.0, 0.04, 0.0])  # Start slightly offset from upright
-
-        # Controllers
         self.pid_controller = PIDController({'Kp': 1.2, 'Ki': 1.63, 'Kd': 0.22})
         self.pole_controller = PoleController(self.angle_only_pole_placement())
         self.nonlinear_controller = NonlinearController({'k2': 1.0})
-
-        # Disturbances
         self.constant_disturbance = 0.0
         self.impulse_disturbance = 0.0
         self.impulse_frames_remaining = 0
-
-        # Noise / filter
         self.noise_enabled = False
         self.filter_enabled = False
         self.filter_history = []
         self.filter_len = 5  
 
     def angle_only_pole_placement(self):
-        """
-        Linearize for [theta, theta_dot], place poles at -3, -4 for moderate stability.
-        """
         A2 = np.array([[0,         1],
                        [self.g/self.L, 0]])
         B2 = np.array([[0],
@@ -48,10 +38,6 @@ class InvertedPendulum:
         return K2 
 
     def step_dynamics(self, dt, controller_type="PID"):
-        """
-        Integrate one step via RK4, then clamp cart x and angle θ in ±2.5, ±90°,
-        without zeroing velocities.
-        """
         s0 = self.state
         k1 = self.dynamics(s0, controller_type)
         k2 = self.dynamics(s0 + 0.5*dt*k1, controller_type)
@@ -102,7 +88,7 @@ class InvertedPendulum:
             # Apply weighted moving average 
             if len(self.filter_history) >= 3:  
                 weights = np.linspace(0.5, 1.0, len(self.filter_history))
-                weights = weights / np.sum(weights)  # Normalize
+                weights = weights / np.sum(weights) 
                 
                 x_meas = 0
                 x_dot_meas = 0
@@ -115,7 +101,6 @@ class InvertedPendulum:
                     theta_meas += hist[2] * weights[i]
                     theta_dot_meas += hist[3] * weights[i]
 
-        # Controller selection 
         if controller_type == "PID":
             u = self.pid_controller.compute_control(theta_meas, theta_dot_meas, 0.02, x_meas)
         elif controller_type == "pole_placement":
