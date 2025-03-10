@@ -20,13 +20,17 @@ class ContinuousSimulation:
         self.control_log = []
         self.disturb_log = []
 
-        self.fig = plt.figure(figsize=(14, 10))
-        gs = plt.GridSpec(3, 2, height_ratios=[2, 1, 1])
+        # Create a figure with more height for the plots
+        self.fig = plt.figure(figsize=(14, 12))
+        
+        # Create a gridspec with more space between subplots
+        gs = plt.GridSpec(4, 2, height_ratios=[2, 1, 1, 1], hspace=0.4, wspace=0.3)
 
+        # Pendulum animation area
         self.ax_pend = self.fig.add_subplot(gs[0, :], xlim=(-3, 3), ylim=(-1, 1.5))
         self.ax_pend.set_aspect('equal')
         self.ax_pend.grid(True)
-        self.ax_pend.set_title("Inverted Pendulum Simulation")
+        self.ax_pend.set_title("Inverted Pendulum Simulation", fontsize=12, pad=10)
 
         # Cart and pendulum
         self.cart_width = 0.4
@@ -55,38 +59,56 @@ class ContinuousSimulation:
                           fontsize=10, color='black',
                           bbox=dict(facecolor='white', alpha=0.7))
 
-        self.info_text = self.ax_pend.text(-2.9, 0.8, "", fontsize=10)
+        self.info_text = self.ax_pend.text(-2.9, 0.8, "", fontsize=10, 
+                                          bbox=dict(facecolor='white', alpha=0.7))
 
-        # System response plot
-        self.ax_plot = self.fig.add_subplot(gs[1, 0])
-        self.ax_plot.set_title("System Response")
-        self.ax_plot.set_xlabel("Time (s)")
-        self.ax_plot.set_ylabel("Value")
-        self.ax_plot.grid(True)
-        self.position_line, = self.ax_plot.plot([], [], 'b-', label='Position (m)')
-        self.angle_line, = self.ax_plot.plot([], [], 'r-', label='Angle (deg)')
-        self.control_line, = self.ax_plot.plot([], [], 'g-', label='Control (N)')
-        self.ax_plot.legend(loc='upper right')
+        # Create plots with shared x-axis for synchronized scrolling
+        self.ax_angle = self.fig.add_subplot(gs[1, 0])
+        self.ax_position = self.fig.add_subplot(gs[2, 0], sharex=self.ax_angle)
+        self.ax_control = self.fig.add_subplot(gs[3, 0], sharex=self.ax_angle)
+        
+        # Only show x-axis labels on the bottom plot
+        plt.setp(self.ax_angle.get_xticklabels(), visible=False)
+        plt.setp(self.ax_position.get_xticklabels(), visible=False)
+        
+        # Set up the individual plot properties
+        self.ax_angle.set_title("Angle Response", fontsize=11)
+        self.ax_angle.set_ylabel("Angle (deg)")
+        self.ax_angle.grid(True)
+        self.angle_line, = self.ax_angle.plot([], [], 'r-')
 
-        # Disturbance plot
-        self.ax_dist = self.fig.add_subplot(gs[1, 1])
-        self.ax_dist.set_title("Disturbance Force")
+        self.ax_position.set_title("Cart Position", fontsize=11)
+        self.ax_position.set_ylabel("Position (m)")
+        self.ax_position.grid(True)
+        self.position_line, = self.ax_position.plot([], [], 'b-')
+
+        self.ax_control.set_title("Control Force", fontsize=11)
+        self.ax_control.set_xlabel("Time (s)")
+        self.ax_control.set_ylabel("Control (N)")
+        self.ax_control.grid(True)
+        self.control_line, = self.ax_control.plot([], [], 'g-')
+
+        # Disturbance plot spans multiple rows for better visibility
+        self.ax_dist = self.fig.add_subplot(gs[1:, 1])
+        self.ax_dist.set_title("Disturbance Force", fontsize=11)
         self.ax_dist.set_xlabel("Time (s)")
         self.ax_dist.set_ylabel("Force (N)")
         self.ax_dist.grid(True)
         self.disturb_line, = self.ax_dist.plot([], [], 'm-', label='Disturbance (N)')
         self.ax_dist.legend(loc='upper right')
 
-        plt.subplots_adjust(left=0.05, bottom=0.25, right=0.95, top=0.95,
-                            wspace=0.3, hspace=0.35)
+        # Adjust layout to make more room for control panel
+        plt.subplots_adjust(left=0.1, bottom=0.3, right=0.95, top=0.95)
+        
+        # Add the control widgets
         self.add_widgets()
 
-        # Animation
+        # Initialize animation
         self.anim = FuncAnimation(self.fig, self.animate, init_func=self.init_anim,
                                   interval=20, blit=True)
 
     def add_widgets(self):
-        control_ax = plt.axes([0.05, 0.03, 0.9, 0.2], facecolor='lightgray')
+        control_ax = plt.axes([0.05, 0.03, 0.9, 0.18], facecolor='lightgray')
         control_ax.set_title("Controls", fontsize=10)
         control_ax.set_xticks([])
         control_ax.set_yticks([])
@@ -107,12 +129,12 @@ class ContinuousSimulation:
         self.slider_impulse = Slider(ax_impulse, 'Impulse', -5, 5, valinit=0)
         self.slider_impulse.on_changed(self.trigger_impulse)
 
-        #buttons
+        # Controller radio buttons
         ax_radio = plt.axes([0.07, 0.08, 0.13, 0.12])
         self.radio_controller = RadioButtons(ax_radio, ['PID', 'Pole', 'Nonlinear'], active=0)
         self.radio_controller.on_clicked(self.update_controller)
 
-        # Buttons
+        # Control buttons with better spacing
         button_w = 0.09
         ax_noise = plt.axes([0.07, 0.02, button_w, 0.04])
         self.button_noise = Button(ax_noise, 'Noise: OFF')
@@ -126,7 +148,6 @@ class ContinuousSimulation:
         self.button_reset = Button(ax_reset, 'Reset')
         self.button_reset.on_clicked(self.reset_simulation)
         
-        # Run all tests button
         ax_run_all = plt.axes([0.07 + 3*button_w + 0.03, 0.02, button_w + 0.04, 0.04])
         self.button_run_all = Button(ax_run_all, 'Run All Tests')
         self.button_run_all.on_clicked(self.run_all_comparisons)
@@ -157,13 +178,12 @@ class ContinuousSimulation:
 
     def toggle_filter(self, event=None):
         self.pendulum.filter_enabled = not self.pendulum.filter_enabled
-        # Reset filter history when toggling
         self.pendulum.filter_history = []
         self.button_filter.label.set_text(f"Filter: {'ON' if self.pendulum.filter_enabled else 'OFF'}")
 
     def reset_simulation(self, event=None):
         self.t = 0.0
-        self.pendulum.state = np.array([0.0, 0.0, 0.04, 0.0])  # Small initial angle
+        self.pendulum.state = np.array([0.0, 0.0, 0.04, 0.0])
         self.pendulum.pid_controller.reset()
         self.pendulum.pole_controller.reset()
         self.pendulum.nonlinear_controller.reset()
@@ -177,7 +197,6 @@ class ContinuousSimulation:
 
     def run_performance_test(self, controller_types=["PID", "pole_placement", "nonlinear"],
                              disturbance=3.0, noise=False, filter=False, test_time=10.0):
-        """Run standardized test on multiple controllers and return performance metrics."""
         results = {}
         
         if not hasattr(self, 'status_text'):
@@ -210,13 +229,46 @@ class ContinuousSimulation:
                 self.pendulum.step_dynamics(self.dt, controller)
                 
                 x, x_dot, theta, theta_dot = self.pendulum.state
+                
+                # Apply measurement noise if enabled (this is the key fix)
+                x_meas, x_dot_meas = x, x_dot
+                theta_meas, theta_dot_meas = theta, theta_dot
+                
+                if self.pendulum.noise_enabled:
+                    x_meas += np.random.normal(0, 0.01)
+                    x_dot_meas += np.random.normal(0, 0.02)
+                    theta_meas += np.random.normal(0, 0.01)
+                    theta_dot_meas += np.random.normal(0, 0.02)
+                
+                # Apply filter if enabled
+                if self.pendulum.filter_enabled:
+                    self.pendulum.filter_history.append([x_meas, x_dot_meas, theta_meas, theta_dot_meas])
+                    
+                    if len(self.pendulum.filter_history) > self.pendulum.filter_len:
+                        self.pendulum.filter_history.pop(0)
+                        
+                    # Apply weighted moving average 
+                    if len(self.pendulum.filter_history) >= 3:  
+                        weights = np.linspace(0.5, 1.0, len(self.pendulum.filter_history))
+                        weights = weights / np.sum(weights) 
+                        
+                        x_meas = 0
+                        x_dot_meas = 0
+                        theta_meas = 0
+                        theta_dot_meas = 0
+                        
+                        for i, hist in enumerate(self.pendulum.filter_history):
+                            x_meas += hist[0] * weights[i]
+                            x_dot_meas += hist[1] * weights[i]
+                            theta_meas += hist[2] * weights[i]
+                            theta_dot_meas += hist[3] * weights[i]
 
                 if controller == "PID":
-                    ctrl = self.pendulum.pid_controller.compute_control(theta, theta_dot, self.dt, x)
+                    ctrl = self.pendulum.pid_controller.compute_control(theta_meas, theta_dot_meas, self.dt, x_meas)
                 elif controller == "pole_placement":
-                    ctrl = self.pendulum.pole_controller.compute_control(theta, theta_dot)
+                    ctrl = self.pendulum.pole_controller.compute_control(theta_meas, theta_dot_meas)
                 elif controller == "nonlinear":
-                    ctrl = self.pendulum.nonlinear_controller.compute_control(theta, theta_dot, 
+                    ctrl = self.pendulum.nonlinear_controller.compute_control(theta_meas, theta_dot_meas, 
                                                                       self.pendulum.m, self.pendulum.L, self.pendulum.g)
                 else:
                     ctrl = 0.0
@@ -251,18 +303,13 @@ class ContinuousSimulation:
         return results
 
     def calculate_response_time(self, time, angle):
-        """Calculate time to recover to 25% of maximum deviation after disturbance."""
-        # First find the maximum angle deviation
         max_angle = max(abs(max(angle)), abs(min(angle)))
         recovery_threshold = max_angle * 0.25  
         
-        # Find the peak deviation point (
         peak_idx = np.argmax(np.abs(angle))
         
-        # Find when it first returns below the recovery threshold
         for i in range(peak_idx, len(time)-1):
             if abs(angle[i]) <= recovery_threshold:
-                # Interpolate for more precise timing
                 t0, t1 = time[i-1], time[i]
                 a0, a1 = abs(angle[i-1]), abs(angle[i])
                 if a0 != a1:  
@@ -271,7 +318,6 @@ class ContinuousSimulation:
                 
                 return time[i] - time[peak_idx]
         
-        # If never recovers to threshold
         return time[-1] - time[peak_idx]
     
     def calculate_settling_time(self, time, angle):
@@ -284,7 +330,6 @@ class ContinuousSimulation:
                 start_idx = i
                 break
                 
-
         for i in range(start_idx, len(time)-window):
             if all(abs(a) <= threshold for a in angle[i:i+window]):
                 return time[i] - time[start_idx]
@@ -292,7 +337,6 @@ class ContinuousSimulation:
         return time[-1] - time[start_idx]  
 
     def run_all_comparisons(self, event=None):
-        """Generate three comparison scenarios as requested."""
         if not hasattr(self, 'status_text'):
             self.status_text = self.ax_pend.text(0, -0.8, "", fontsize=12, color='blue',
                                                  bbox=dict(facecolor='white', alpha=0.8),
@@ -481,8 +525,15 @@ class ContinuousSimulation:
         self.bob.center = (0, 0)
         self.control_arrow.set_positions((0,0),(0,0))
         self.disturb_arrow.set_positions((0,0),(0,0))
+        self.angle_line.set_data([], [])
+        self.position_line.set_data([], [])
+        self.control_line.set_data([], [])
+        self.disturb_line.set_data([], [])
+        self.info_text.set_text("")
         return (self.cart, self.left_wheel, self.right_wheel,
-                self.rod, self.bob, self.control_arrow, self.disturb_arrow)
+                self.rod, self.bob, self.control_arrow, self.disturb_arrow,
+                self.angle_line, self.position_line, self.control_line, 
+                self.disturb_line, self.info_text)
 
     def animate(self, frame):
         self.pendulum.step_dynamics(self.dt, self.controller_type)
@@ -490,12 +541,44 @@ class ContinuousSimulation:
 
         x, x_dot, theta, theta_dot = self.pendulum.state
 
+        # Apply measurement noise and filtering
+        x_meas, x_dot_meas = x, x_dot
+        theta_meas, theta_dot_meas = theta, theta_dot
+        
+        if self.pendulum.noise_enabled:
+            x_meas += np.random.normal(0, 0.01)
+            x_dot_meas += np.random.normal(0, 0.02)
+            theta_meas += np.random.normal(0, 0.01)
+            theta_dot_meas += np.random.normal(0, 0.02)
+
+        if self.pendulum.filter_enabled:
+            self.pendulum.filter_history.append([x_meas, x_dot_meas, theta_meas, theta_dot_meas])
+            
+            if len(self.pendulum.filter_history) > self.pendulum.filter_len:
+                self.pendulum.filter_history.pop(0)
+                
+            # Apply weighted moving average 
+            if len(self.pendulum.filter_history) >= 3:  
+                weights = np.linspace(0.5, 1.0, len(self.pendulum.filter_history))
+                weights = weights / np.sum(weights) 
+                
+                x_meas = 0
+                x_dot_meas = 0
+                theta_meas = 0
+                theta_dot_meas = 0
+                
+                for i, hist in enumerate(self.pendulum.filter_history):
+                    x_meas += hist[0] * weights[i]
+                    x_dot_meas += hist[1] * weights[i]
+                    theta_meas += hist[2] * weights[i]
+                    theta_dot_meas += hist[3] * weights[i]
+                    
         if self.controller_type == "PID":
-            ctrl = self.pendulum.pid_controller.compute_control(theta, theta_dot, self.dt, x)
+            ctrl = self.pendulum.pid_controller.compute_control(theta_meas, theta_dot_meas, self.dt, x_meas)
         elif self.controller_type == "pole_placement":
-            ctrl = self.pendulum.pole_controller.compute_control(theta, theta_dot)
+            ctrl = self.pendulum.pole_controller.compute_control(theta_meas, theta_dot_meas)
         elif self.controller_type == "nonlinear":
-            ctrl = self.pendulum.nonlinear_controller.compute_control(theta, theta_dot, 
+            ctrl = self.pendulum.nonlinear_controller.compute_control(theta_meas, theta_dot_meas, 
                                                                self.pendulum.m, self.pendulum.L, self.pendulum.g)
         else:
             ctrl = 0.0
@@ -541,8 +624,6 @@ class ContinuousSimulation:
             self.disturb_arrow.set_visible(False)
 
         angle_deg = np.degrees(theta)
-        noise_status = "ON" if self.pendulum.noise_enabled else "OFF"
-        filter_status = "ON" if self.pendulum.filter_enabled else "OFF"
         
         info_str = (f"Controller = {self.controller_type}\n"
                     f"Angle = {angle_deg:.1f}°\n")
@@ -554,31 +635,47 @@ class ContinuousSimulation:
         ctrl_arr = np.array(self.control_log)
         dist_arr = np.array(self.disturb_log)
 
-        self.position_line.set_data(t_arr, x_arr)
         self.angle_line.set_data(t_arr, th_arr_deg)
+        self.position_line.set_data(t_arr, x_arr)
         self.control_line.set_data(t_arr, ctrl_arr)
-        if len(t_arr) > 1:
-            self.ax_plot.set_xlim(t_arr[0], t_arr[-1])
-        if len(t_arr) > 0:
-            all_vals = np.concatenate([x_arr, th_arr_deg, ctrl_arr])
-            y_min = np.min(all_vals)
-            y_max = np.max(all_vals)
-            margin = 0.1*(y_max - y_min if y_max>y_min else 1)
-            self.ax_plot.set_ylim(y_min - margin, y_max + margin)
-
         self.disturb_line.set_data(t_arr, dist_arr)
+        
         if len(t_arr) > 1:
-            self.ax_dist.set_xlim(t_arr[0], t_arr[-1])
-        if len(dist_arr) > 0:
-            d_min = np.min(dist_arr)
-            d_max = np.max(dist_arr)
-            d_margin = 0.1*(d_max - d_min if d_max> d_min else 1)
-            self.ax_dist.set_ylim(d_min - d_margin, d_max + d_margin)
+            # Set reasonable axis limits with enough padding
+            time_min = t_arr[0]
+            time_max = max(t_arr[-1], time_min + 1.5)  # Ensure at least 1.5s window
+            
+            self.ax_angle.set_xlim(time_min, time_max)
+            self.ax_dist.set_xlim(time_min, time_max)
+            
+            # Set data-dependent y-axis limits with margin
+            if len(th_arr_deg) > 0:
+                y_min = min(-2.0, np.min(th_arr_deg))  # At least -2 degrees
+                y_max = max(2.0, np.max(th_arr_deg))   # At least +2 degrees
+                margin = 0.2 * (y_max - y_min)
+                self.ax_angle.set_ylim(y_min - margin, y_max + margin)
+                
+            if len(x_arr) > 0:
+                y_min = min(-0.01, np.min(x_arr))
+                y_max = max(0.01, np.max(x_arr))
+                margin = 0.1 * (y_max - y_min)
+                self.ax_position.set_ylim(y_min - margin, y_max + margin)
+                
+            if len(ctrl_arr) > 0:
+                y_min = min(-0.1, np.min(ctrl_arr))
+                y_max = max(0.1, np.max(ctrl_arr))
+                margin = 0.1 * (y_max - y_min)
+                self.ax_control.set_ylim(y_min - margin, y_max + margin)
+                
+            if len(dist_arr) > 0:
+                y_range = max(0.1, np.max(dist_arr) - np.min(dist_arr))
+                y_mid = (np.max(dist_arr) + np.min(dist_arr)) / 2
+                self.ax_dist.set_ylim(y_mid - y_range, y_mid + y_range)
 
         return (self.cart, self.left_wheel, self.right_wheel,
                 self.rod, self.bob, self.control_arrow, self.disturb_arrow,
-                self.info_text, self.position_line, self.angle_line,
-                self.control_line, self.disturb_line)
+                self.angle_line, self.position_line, self.control_line,
+                self.disturb_line, self.info_text)
 
     def main_loop(self):
         plt.show()

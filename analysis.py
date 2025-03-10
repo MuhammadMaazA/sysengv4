@@ -60,3 +60,6 @@ def create_scenario_plot(results, noise_on=False, filter_on=False):
     plt.savefig(scenario_name)
     
     return plt.gcf() 
+
+
+
